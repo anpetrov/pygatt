@@ -356,6 +356,34 @@ class GATTToolBackend(BLEBackend):
                           "BLE adapter may need to be reset.")
         return []
 
+    def passive_scan(self, timeout=10, run_as_root=False, callback=None):
+        """
+           Documentation goes here
+        """
+
+        cmd = 'hcitool lescan --passive --duplicates'
+        if run_as_root:
+            cmd = 'sudo %s' % cmd
+
+        log.info("Starting BLE scan %s", cmd)
+        scan = pexpect.spawn(cmd)
+
+        try:
+            while True:
+                scan.expect('\r\n')
+                match = re.match(
+                    r'(([0-9A-Fa-f][0-9A-Fa-f]:?){6}) (\(?.+\)?)', scan.before.decode('utf-8'))
+                if match is not None:
+                    address = match.group(1)
+                    if callback is not None:
+                       callback(address)
+
+        finally:
+                print ("all done")
+
+        return []
+
+
     def connect(self, address, timeout=DEFAULT_CONNECT_TIMEOUT_S,
                 address_type=BLEAddressType.public):
         log.info('Connecting to %s with timeout=%s', address, timeout)
